@@ -1,0 +1,68 @@
+name: Build apps (Windows, macOS, Linux)
+# Builds a ready-to-run TypeStrike app for all three systems and attaches them to a GitHub Release.
+#   git tag v1.0.0 && git push origin v1.0.0       (or press "Run workflow" in the Actions tab to just get the files)
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: Windows }
+          - { os: macos-latest,   name: macOS }
+          - { os: ubuntu-latest,  name: Linux }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Linux - install Tk
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk tk-dev
+      - name: Install build tools
+        run: python -m pip install --upgrade pip pyinstaller
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          pyinstaller --noconfirm --onefile --noconsole --name TypeStrike --icon assets/icon.ico --add-data "assets/icon.png;assets" typestrike.py
+          mv dist/TypeStrike.exe dist/TypeStrike-Windows.exe
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller --noconfirm --windowed --name TypeStrike --icon assets/icon.icns --add-data "assets/icon.png:assets" typestrike.py
+          ditto -c -k --sequesterRsrc --keepParent dist/TypeStrike.app dist/TypeStrike-macOS.zip
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          pyinstaller --noconfirm --onefile --name TypeStrike --add-data "assets/icon.png:assets" typestrike.py
+          tar -czf dist/TypeStrike-Linux.tar.gz -C dist TypeStrike
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TypeStrike-${{ matrix.name }}
+          path: |
+            dist/TypeStrike-Windows.exe
+            dist/TypeStrike-macOS.zip
+            dist/TypeStrike-Linux.tar.gz
+          if-no-files-found: error
+  release:
+    needs: build
+    timeout-minutes: 15
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
