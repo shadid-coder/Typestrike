@@ -53,3 +53,8 @@ Type the highlighted word. Tab next target, Backspace unlock, Enter ULTIMATE (wh
 - Saves, settings and generated sound files: `~/.typestrike/` (errors in `error.log`).
 - Bangla native mode: switch your OS keyboard to Bangla first (Windows: Win+Space).
 - Tests (no display needed): `python tests/smoke_test.py`
+
+
+## License
+TypeStrike is **free for personal, educational and other noncommercial use** under the [PolyForm Noncommercial License 1.0.0](LICENSE). You may play it, study the code, change it and share it - but you may **not sell it or use it commercially** (paid apps, app-store listings, paid services, selling copies) without written permission from the author. Please keep the licence and the "Required Notice" line when you share it.
+Copyright (c) 2026 Shadid.
